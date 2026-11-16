@@ -1,0 +1,11 @@
+<resources>
+    <!--
+        The system splash (Android 12+) is just the splash background color with no icon, so it
+        hands over seamlessly to the animated splash drawn in Compose.
+    -->
+    <style name="Theme.Nbapp" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+    </style>
+</resources>

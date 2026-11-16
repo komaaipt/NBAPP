@@ -6,6 +6,9 @@ import androidx.compose.ui.graphics.Color
 internal val NbaBlue = Color(0xFF1D428A)
 internal val NbaRed = Color(0xFFC8102E)
 
+/** Splash background; also used by the Android system splash (res/values/colors.xml). */
+val SplashBackground = Color(0xFF0B1630)
+
 // Light scheme
 internal val LightPrimaryContainer = Color(0xFFD9E2FF)
 internal val LightOnPrimaryContainer = Color(0xFF001A43)

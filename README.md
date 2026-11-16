@@ -1,10 +1,11 @@
-# NBA App
+# NBAPP
 
 A small NBA app built for the TGLab Android task, using **MVVM** with **Kotlin Multiplatform**
 and **Compose Multiplatform** (Android and iOS share all the code, including the UI).
 
 | Screen | What it does |
 |---|---|
+| **Splash** | A basketball, drawn in code, is thrown in an arc, lands in the middle of the screen with a small bounce, and the app name, NBAPP, fades in below it. |
 | **Home** tab | Lists the current NBA teams (name, city, conference). The **Name** button opens a dialog to sort by Name, City or Conference; the choice updates the button title and the list. |
 | **Team games** bottom sheet | Opened by tapping a team. Receives the team id and lists its games (home team, home score, visitor team, visitor score), newest first, with **endless scroll**. Closes with the Back button, by dragging down or with **< Home**. |
 | **Players** tab | Searches players by name (first name, last name, team). Tapping a player reuses the team games bottom sheet for the player's team. |
@@ -41,7 +42,7 @@ it into the `ApiConfig` object used by the HTTP client. Without a key the app sh
 - Android (JVM): `./gradlew :shared:testAndroidHostTest`
 - iOS simulator: `./gradlew :shared:iosSimulatorArm64Test`
 
-The same 47 tests in `commonTest` run on both platforms.
+The same 52 tests in `commonTest` run on both platforms.
 
 ## Architecture
 
@@ -74,6 +75,7 @@ domain/
   model/       Team, Game, Player, Page
   repository/  repository interfaces
 presentation/
+  splash/      animated splash (pure animation model + Canvas drawing)
   navigation/  tabs, selected team, scoped ViewModel stores
   home/        Home tab, sort dialog
   teamgames/   team games bottom sheet
@@ -104,5 +106,9 @@ Tests use kotlin-test, kotlinx-coroutines-test and Ktor `MockEngine`.
   held at the app level, so Home and Players open the same view. Its ViewModel lives in its own
   `ViewModelStore`: it survives rotation and is cleared when the sheet closes, so ViewModels don't
   pile up for every team opened.
+- **Splash drawn in code.** `SplashAnimation.kt` turns the elapsed time into the ball's flight,
+  bounce and the name's fade, and is unit tested; `SplashScreen.kt` only draws it on a Canvas.
+  The Android 12+ system splash is a plain background of the same color, so it hands over to the
+  animation without a jump.
 - **State survives configuration changes.** ViewModels keep the data; the selected tab and team
   use `rememberSaveable`, and each tab keeps its scroll position when switching tabs.

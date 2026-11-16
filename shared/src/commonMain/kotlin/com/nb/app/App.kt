@@ -21,6 +21,7 @@ import com.nb.app.presentation.navigation.NbaBottomBar
 import com.nb.app.presentation.navigation.ScopedViewModelStores
 import com.nb.app.presentation.navigation.SelectedTeam
 import com.nb.app.presentation.players.PlayersScreen
+import com.nb.app.presentation.splash.SplashScreen
 import com.nb.app.presentation.teamgames.TeamGamesSheet
 
 /**
@@ -30,6 +31,13 @@ import com.nb.app.presentation.teamgames.TeamGamesSheet
 @Composable
 fun App() {
     NbaTheme {
+        // Saveable so the splash doesn't replay after a rotation.
+        var isSplashVisible by rememberSaveable { mutableStateOf(true) }
+        if (isSplashVisible) {
+            SplashScreen(onFinished = { isSplashVisible = false })
+            return@NbaTheme
+        }
+
         var currentTab by rememberSaveable { mutableStateOf(AppTab.HOME) }
         var selectedTeam by rememberSaveable(stateSaver = SelectedTeam.Saver) {
             mutableStateOf<SelectedTeam?>(null)
