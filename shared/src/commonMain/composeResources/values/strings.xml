@@ -30,6 +30,13 @@
     <string name="column_last_name">Last Name</string>
     <string name="column_team">Team</string>
 
+    <!-- Player search -->
+    <string name="search_players_hint">Search players by name</string>
+    <string name="clear_search_description">Clear search</string>
+    <string name="players_prompt">Type at least 2 letters to search for players.</string>
+    <string name="players_empty">No players found for "%1$s".</string>
+    <string name="players_end_reached">No more players.</string>
+
     <!-- Team games sheet -->
     <string name="back_to_home">Home</string>
     <string name="back_to_home_description">Back to Home</string>

@@ -73,8 +73,9 @@ fun ErrorState(
 fun EmptyState(
     modifier: Modifier = Modifier,
     message: StringResource = Res.string.empty_list,
+    formatArgs: List<Any> = emptyList(),
 ) {
-    MessageState(text = stringResource(message), modifier = modifier)
+    MessageState(text = stringResource(message, *formatArgs.toTypedArray()), modifier = modifier)
 }
 
 @Composable

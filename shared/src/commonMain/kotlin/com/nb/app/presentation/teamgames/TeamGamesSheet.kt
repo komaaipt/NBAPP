@@ -31,9 +31,9 @@ import com.nb.app.core.ui.components.DataTable
 import com.nb.app.core.ui.components.EmptyState
 import com.nb.app.core.ui.components.EndlessScrollEffect
 import com.nb.app.core.ui.components.ErrorState
-import com.nb.app.core.ui.components.LoadingMoreIndicator
 import com.nb.app.core.ui.components.LoadingState
 import com.nb.app.core.ui.components.TableColumn
+import com.nb.app.core.ui.components.pagingFooter
 import com.nb.app.core.ui.theme.NbaTheme
 import com.nb.app.core.ui.toMessage
 import com.nb.app.domain.model.Game
@@ -150,7 +150,6 @@ private fun GameTable(
             textAlign = TextAlign.Center,
         ),
     )
-    val loadMoreError = uiState.loadMoreError
     DataTable(
         columns = columns,
         items = uiState.games,
@@ -165,26 +164,13 @@ private fun GameTable(
         },
         state = listState,
         footer = {
-            when {
-                uiState.isLoadingMore -> item(key = "loading_more") { LoadingMoreIndicator() }
-                loadMoreError != null -> item(key = "load_more_error") {
-                    ErrorState(
-                        message = loadMoreError.toMessage(),
-                        onRetry = onRetryClick,
-                        modifier = Modifier.fillMaxWidth(),
-                        fillMaxSize = false,
-                    )
-                }
-                uiState.endReached -> item(key = "end_reached") {
-                    Text(
-                        text = stringResource(Res.string.games_end_reached),
-                        modifier = Modifier.fillMaxWidth().padding(24.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
+            pagingFooter(
+                isLoadingMore = uiState.isLoadingMore,
+                loadMoreError = uiState.loadMoreError,
+                endReached = uiState.endReached,
+                endReachedMessage = Res.string.games_end_reached,
+                onRetryClick = onRetryClick,
+            )
         },
     )
 }

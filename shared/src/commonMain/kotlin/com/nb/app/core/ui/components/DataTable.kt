@@ -51,8 +51,8 @@ data class TableColumn(
 /**
  * A simple table: a sticky header with the column titles and one row per item.
  *
- * Rows are clickable (and show a chevron) when [onItemClick] is set. [footer] adds extra items
- * after the rows, e.g. a "loading more" indicator for endless scroll.
+ * Rows are clickable (and show a chevron) when [onItemClick] is set and [isItemClickable] returns
+ * `true` for the item. [footer] adds extra items after the rows, e.g. a "loading more" indicator.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -63,6 +63,7 @@ fun <T> DataTable(
     cells: (T) -> List<String>,
     modifier: Modifier = Modifier,
     onItemClick: ((T) -> Unit)? = null,
+    isItemClickable: (T) -> Boolean = { true },
     state: LazyListState = rememberLazyListState(),
     footer: LazyListScope.() -> Unit = {},
 ) {
@@ -75,7 +76,8 @@ fun <T> DataTable(
             TableRow(
                 columns = columns,
                 cells = cells(item),
-                onClick = onItemClick?.let { { it(item) } },
+                onClick = onItemClick?.takeIf { isItemClickable(item) }?.let { { it(item) } },
+                reserveChevronSpace = isClickable,
             )
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = HorizontalPadding),
@@ -121,6 +123,7 @@ fun TableRow(
     cells: List<String>,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    reserveChevronSpace: Boolean = onClick != null,
 ) {
     require(cells.size == columns.size) { "Expected ${columns.size} cells but got ${cells.size}" }
     Row(
@@ -141,6 +144,9 @@ fun TableRow(
                 modifier = Modifier.size(ChevronSize),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        } else if (reserveChevronSpace) {
+            // Keeps the columns aligned with the header and the clickable rows.
+            Spacer(Modifier.size(ChevronSize))
         }
     }
 }
