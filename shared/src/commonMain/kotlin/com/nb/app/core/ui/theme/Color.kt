@@ -3,7 +3,7 @@ package com.nb.app.core.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // Brand
-internal val NbaBlue = Color(0xFF2F6BFF)
+internal val NbaBlue = Color(0xFF23469C)
 internal val BallOrange = Color(0xFFE8762B)
 
 /** Splash background; also used by the Android system splash (res/values/colors.xml). */
