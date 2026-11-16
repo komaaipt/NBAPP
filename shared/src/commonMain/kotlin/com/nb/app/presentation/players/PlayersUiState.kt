@@ -6,10 +6,8 @@ import com.nb.app.domain.model.Player
 
 @Immutable
 data class PlayersUiState(
-    /** Text in the search field, exactly as typed. */
     val query: String = "",
     val players: List<Player> = emptyList(),
-    /** `true` once a search ran for the current query, so "no results" can be told apart. */
     val hasSearched: Boolean = false,
     val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false,

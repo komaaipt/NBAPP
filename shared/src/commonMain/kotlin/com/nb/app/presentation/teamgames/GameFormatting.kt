@@ -16,11 +16,9 @@ internal fun formatGameDate(isoDate: String): String {
     return "${MonthAbbreviations[month - 1]} $day, $year"
 }
 
-/** 2026 → "2026–27". */
 internal fun formatSeason(season: Int): String =
     "$season–${((season + 1) % 100).toString().padStart(2, '0')}"
 
-/** Whether the team with [teamId] won [game]; `null` for ties or games it didn't play. */
 internal fun Game.isWinFor(teamId: Int): Boolean? {
     val ownScore = when (teamId) {
         homeTeam.id -> homeTeamScore

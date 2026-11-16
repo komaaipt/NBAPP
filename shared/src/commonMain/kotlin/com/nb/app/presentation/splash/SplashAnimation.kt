@@ -22,15 +22,11 @@ internal const val SPLASH_DURATION_MILLIS = 2_000f
 internal const val BOUNCE_HEIGHT = 0.35f
 
 internal data class SplashFrame(
-    /** 0 at the bottom-left corner, 1 when the ball lands in the middle. */
     val flight: Float,
-    /** Height of the throw arc: 0 at both ends, 1 at the top. */
     val arc: Float,
-    /** How high the ball bounces above its resting point, in ball radiuses. */
     val bounceLift: Float,
     val ballScale: Float,
     val ballRotationDegrees: Float,
-    /** 0 = round, 1 = fully squashed on landing. */
     val ballSquash: Float,
     val shadowAlpha: Float,
     val nameAlpha: Float,

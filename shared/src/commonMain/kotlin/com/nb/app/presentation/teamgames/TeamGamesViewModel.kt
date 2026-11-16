@@ -22,7 +22,6 @@ class TeamGamesViewModel(
     private val _uiState = MutableStateFlow(TeamGamesUiState())
     val uiState: StateFlow<TeamGamesUiState> = _uiState.asStateFlow()
 
-    /** Season of the next page; `null` before the first page loads. */
     private var nextSeason: Int? = null
     private var loadJob: Job? = null
 
@@ -30,10 +29,8 @@ class TeamGamesViewModel(
         loadPage(isFirstPage = true)
     }
 
-    /** Called by the list when the user scrolls close to the end. */
     fun onLoadMore() {
         val state = _uiState.value
-        // A failed page waits for an explicit retry instead of hitting the API again on scroll.
         if (state.games.isEmpty() || state.endReached || state.loadMoreError != null) return
         loadPage(isFirstPage = false)
     }
