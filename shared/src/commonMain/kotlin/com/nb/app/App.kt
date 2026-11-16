@@ -8,14 +8,17 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nb.app.core.ui.theme.NbaTheme
 import com.nb.app.presentation.home.HomeScreen
 import com.nb.app.presentation.navigation.AppTab
 import com.nb.app.presentation.navigation.NbaBottomBar
+import com.nb.app.presentation.navigation.ScopedViewModelStores
 import com.nb.app.presentation.navigation.SelectedTeam
 import com.nb.app.presentation.players.PlayersScreen
 import com.nb.app.presentation.teamgames.TeamGamesSheet
@@ -33,6 +36,7 @@ fun App() {
         }
         // Keeps each tab's saveable UI state (scroll position, search text...) while switching tabs.
         val tabStateHolder = rememberSaveableStateHolder()
+        val scopedViewModelStores = viewModel { ScopedViewModelStores() }
 
         Scaffold(
             bottomBar = {
@@ -55,7 +59,16 @@ fun App() {
         }
 
         selectedTeam?.let { team ->
-            TeamGamesSheet(team = team, onDismiss = { selectedTeam = null })
+            val storeKey = "team_games_${team.id}"
+            val viewModelStoreOwner = remember(storeKey) { scopedViewModelStores.ownerFor(storeKey) }
+            TeamGamesSheet(
+                team = team,
+                viewModelStoreOwner = viewModelStoreOwner,
+                onDismiss = {
+                    scopedViewModelStores.clear(storeKey)
+                    selectedTeam = null
+                },
+            )
         }
     }
 }

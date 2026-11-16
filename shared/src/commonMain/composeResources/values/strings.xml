@@ -33,6 +33,8 @@
     <!-- Team games sheet -->
     <string name="back_to_home">Home</string>
     <string name="back_to_home_description">Back to Home</string>
+    <string name="games_empty">No games found for this team.</string>
+    <string name="games_end_reached">No more games.</string>
 
     <!-- Common states -->
     <string name="loading_description">Loading</string>

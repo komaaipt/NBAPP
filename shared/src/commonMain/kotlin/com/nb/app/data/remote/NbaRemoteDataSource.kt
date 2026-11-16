@@ -18,9 +18,15 @@ internal class NbaRemoteDataSource(private val client: HttpClient) {
     suspend fun getTeams(): ListResponseDto<TeamDto> =
         client.get("teams").body()
 
-    suspend fun getGames(teamId: Int, cursor: Int?, perPage: Int): ListResponseDto<GameDto> =
+    suspend fun getGames(
+        teamId: Int,
+        season: Int,
+        cursor: Int?,
+        perPage: Int,
+    ): ListResponseDto<GameDto> =
         client.get("games") {
             parameter("team_ids[]", teamId)
+            parameter("seasons[]", season)
             parameter("per_page", perPage)
             cursor?.let { parameter("cursor", it) }
         }.body()

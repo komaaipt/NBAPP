@@ -3,6 +3,7 @@ package com.nb.app.core.ui.components
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -91,23 +92,26 @@ fun TableHeader(
     modifier: Modifier = Modifier,
     reserveChevronSpace: Boolean = false,
 ) {
+    // Opaque so rows scrolling under the sticky header stay hidden.
     Surface(modifier = modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surface) {
-        Row(
-            modifier = Modifier.padding(horizontal = HorizontalPadding, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            columns.forEach { column ->
-                TableCell(
-                    text = column.title,
-                    column = column,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                )
+        Column {
+            Row(
+                modifier = Modifier.padding(horizontal = HorizontalPadding, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                columns.forEach { column ->
+                    TableCell(
+                        text = column.title,
+                        column = column,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                if (reserveChevronSpace) Spacer(Modifier.size(ChevronSize))
             }
-            if (reserveChevronSpace) Spacer(Modifier.size(ChevronSize))
+            HorizontalDivider(modifier = Modifier.padding(horizontal = HorizontalPadding))
         }
-        HorizontalDivider(modifier = Modifier.padding(horizontal = HorizontalPadding))
     }
 }
 

@@ -21,13 +21,24 @@ internal object Fixtures {
         }
     """.trimIndent()
 
-    fun gamesJson(nextCursor: Int?): String = """
-        {
-          "data": [
+    /** One game row of the `/games` endpoint. */
+    data class GameRow(
+        val id: Int,
+        val date: String,
+        val statusState: String = "final",
+        val homeScore: Int = 115,
+        val visitorScore: Int = 105,
+    )
+
+    fun gamesJson(games: List<GameRow>, nextCursor: Int? = null): String {
+        val rows = games.joinToString(",\n") { game ->
+            """
             {
-              "id": 15907925, "date": "2025-01-05", "season": 2024, "status": "Final",
+              "id": ${game.id}, "date": "${game.date}", "season": 2026,
+              "status": "${if (game.statusState == "final") "Final" else game.date + "T00:00:00Z"}",
+              "status_state": "${game.statusState}",
               "period": 4, "time": "Final", "postseason": false, "postponed": false,
-              "home_team_score": 115, "visitor_team_score": 105,
+              "home_team_score": ${game.homeScore}, "visitor_team_score": ${game.visitorScore},
               "home_q1": 29, "home_ot1": null,
               "home_team": {
                 "id": 6, "conference": "East", "division": "Central", "city": "Cleveland",
@@ -38,10 +49,11 @@ internal object Fixtures {
                 "name": "Hornets", "full_name": "Charlotte Hornets", "abbreviation": "CHA"
               }
             }
-          ],
-          "meta": { "next_cursor": ${nextCursor ?: "null"}, "per_page": 25 }
+            """.trimIndent()
         }
-    """.trimIndent()
+        val meta = if (nextCursor == null) """{ "per_page": 100 }""" else """{ "next_cursor": $nextCursor, "per_page": 100 }"""
+        return """{ "data": [ $rows ], "meta": $meta }"""
+    }
 
     val PLAYERS_JSON = """
         {

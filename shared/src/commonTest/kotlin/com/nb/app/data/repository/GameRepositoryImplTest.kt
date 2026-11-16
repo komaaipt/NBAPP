@@ -3,6 +3,7 @@ package com.nb.app.data.repository
 import com.nb.app.core.network.ApiError
 import com.nb.app.core.network.ApiException
 import com.nb.app.data.Fixtures
+import com.nb.app.data.Fixtures.GameRow
 import com.nb.app.data.TestHttpClient
 import com.nb.app.data.remote.NbaRemoteDataSource
 import com.nb.app.data.respondJson
@@ -13,50 +14,109 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 class GameRepositoryImplTest {
 
-    @Test
-    fun getTeamGames_firstPage_sendsTeamIdAndPageSize() = runTest {
-        val http = TestHttpClient { respondJson(Fixtures.gamesJson(nextCursor = 25)) }
-        val repository = GameRepositoryImpl(NbaRemoteDataSource(http.client), pageSize = 25)
+    private fun repository(http: TestHttpClient, currentSeason: Int = 2026) =
+        GameRepositoryImpl(NbaRemoteDataSource(http.client), currentSeason = { currentSeason })
 
-        val page = repository.getTeamGames(teamId = 6).getOrThrow()
+    @Test
+    fun firstPage_loadsCurrentSeasonNewestFirstWithoutScheduledGames() = runTest {
+        val http = TestHttpClient {
+            respondJson(
+                Fixtures.gamesJson(
+                    listOf(
+                        GameRow(id = 1, date = "2026-10-21"),
+                        GameRow(id = 2, date = "2026-10-24", homeScore = 118, visitorScore = 138),
+                        GameRow(id = 3, date = "2026-11-20", statusState = "scheduled"),
+                    ),
+                ),
+            )
+        }
+
+        val page = repository(http).getTeamGames(teamId = 6).getOrThrow()
 
         val url = http.requests.single().url
         assertEquals("/v1/games", url.encodedPath)
         assertEquals("6", url.parameters["team_ids[]"])
-        assertEquals("25", url.parameters["per_page"])
+        assertEquals("2026", url.parameters["seasons[]"])
+        assertEquals("100", url.parameters["per_page"])
         assertNull(url.parameters["cursor"])
 
-        assertEquals(25, page.nextCursor)
-        assertTrue(page.hasMore)
-        val game = page.items.single()
-        assertEquals("Cleveland Cavaliers", game.homeTeam.fullName)
-        assertEquals(115, game.homeTeamScore)
-        assertEquals("Charlotte Hornets", game.visitorTeam.fullName)
-        assertEquals(105, game.visitorTeamScore)
+        assertEquals(listOf(2, 1), page.items.map { it.id })
+        val latest = page.items.first()
+        assertEquals("Cleveland Cavaliers", latest.homeTeam.fullName)
+        assertEquals(118, latest.homeTeamScore)
+        assertEquals("Charlotte Hornets", latest.visitorTeam.fullName)
+        assertEquals(138, latest.visitorTeamScore)
+        assertEquals(2025, page.nextCursor)
     }
 
     @Test
-    fun getTeamGames_nextPage_sendsCursor() = runTest {
-        val http = TestHttpClient { respondJson(Fixtures.gamesJson(nextCursor = null)) }
-        val repository = GameRepositoryImpl(NbaRemoteDataSource(http.client))
+    fun season_followsApiCursorUntilTheWholeSeasonIsLoaded() = runTest {
+        val http = TestHttpClient { request ->
+            when (request.url.parameters["cursor"]) {
+                null -> respondJson(
+                    Fixtures.gamesJson(listOf(GameRow(id = 1, date = "2025-10-22")), nextCursor = 77),
+                )
+                "77" -> respondJson(Fixtures.gamesJson(listOf(GameRow(id = 2, date = "2026-04-30"))))
+                else -> error("Unexpected cursor")
+            }
+        }
 
-        val page = repository.getTeamGames(teamId = 6, cursor = 25).getOrThrow()
+        val page = repository(http).getTeamGames(teamId = 6, season = 2025).getOrThrow()
 
-        assertEquals("25", http.requests.single().url.parameters["cursor"])
+        assertEquals(2, http.requests.size)
+        assertEquals(listOf("2025", "2025"), http.requests.map { it.url.parameters["seasons[]"] })
+        assertEquals(listOf(2, 1), page.items.map { it.id })
+        assertEquals(2024, page.nextCursor)
+    }
+
+    @Test
+    fun firstPage_beforeTipOff_fallsBackToPreviousSeason() = runTest {
+        val http = TestHttpClient { request ->
+            when (request.url.parameters["seasons[]"]) {
+                "2026" -> respondJson(
+                    Fixtures.gamesJson(listOf(GameRow(id = 9, date = "2026-10-21", statusState = "scheduled"))),
+                )
+                "2025" -> respondJson(Fixtures.gamesJson(listOf(GameRow(id = 1, date = "2026-04-12"))))
+                else -> error("Unexpected season")
+            }
+        }
+
+        val page = repository(http).getTeamGames(teamId = 6).getOrThrow()
+
+        assertEquals(listOf(1), page.items.map { it.id })
+        assertEquals(2024, page.nextCursor)
+    }
+
+    @Test
+    fun emptyOlderSeason_endsTheList() = runTest {
+        val http = TestHttpClient { respondJson(Fixtures.gamesJson(emptyList())) }
+
+        val page = repository(http).getTeamGames(teamId = 41, season = 2001).getOrThrow()
+
+        assertEquals(1, http.requests.size)
+        assertEquals(emptyList(), page.items)
         assertNull(page.nextCursor)
         assertFalse(page.hasMore)
     }
 
     @Test
-    fun getTeamGames_mapsRateLimit() = runTest {
-        val http = TestHttpClient { respondJson("Too Many Requests", HttpStatusCode.TooManyRequests) }
-        val repository = GameRepositoryImpl(NbaRemoteDataSource(http.client))
+    fun firstNbaSeason_isTheLastPage() = runTest {
+        val http = TestHttpClient { respondJson(Fixtures.gamesJson(listOf(GameRow(id = 1, date = "1946-11-01")))) }
 
-        val failure = repository.getTeamGames(teamId = 6).exceptionOrNull()
+        val page = repository(http).getTeamGames(teamId = 2, season = FIRST_NBA_SEASON).getOrThrow()
+
+        assertEquals(1, page.items.size)
+        assertNull(page.nextCursor)
+    }
+
+    @Test
+    fun rateLimit_isMapped() = runTest {
+        val http = TestHttpClient { respondJson("Too Many Requests", HttpStatusCode.TooManyRequests) }
+
+        val failure = repository(http).getTeamGames(teamId = 6).exceptionOrNull()
 
         assertIs<ApiException>(failure)
         assertEquals(ApiError.RATE_LIMITED, failure.error)

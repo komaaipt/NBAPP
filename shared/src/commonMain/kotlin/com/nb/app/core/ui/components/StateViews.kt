@@ -59,8 +59,9 @@ fun ErrorState(
     message: StringResource,
     modifier: Modifier = Modifier,
     onRetry: (() -> Unit)? = null,
+    fillMaxSize: Boolean = true,
 ) {
-    MessageState(text = stringResource(message), modifier = modifier) {
+    MessageState(text = stringResource(message), modifier = modifier, fillMaxSize = fillMaxSize) {
         if (onRetry != null) {
             Button(onClick = onRetry) { Text(stringResource(Res.string.retry)) }
         }
@@ -80,10 +81,13 @@ fun EmptyState(
 private fun MessageState(
     text: String,
     modifier: Modifier = Modifier,
+    fillMaxSize: Boolean = true,
     action: @Composable () -> Unit = {},
 ) {
     Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
+        modifier = modifier
+            .then(if (fillMaxSize) Modifier.fillMaxSize() else Modifier)
+            .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

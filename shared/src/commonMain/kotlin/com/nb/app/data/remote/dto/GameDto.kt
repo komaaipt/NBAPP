@@ -9,6 +9,8 @@ data class GameDto(
     @SerialName("date") val date: String = "",
     @SerialName("season") val season: Int? = null,
     @SerialName("status") val status: String = "",
+    /** "final", "scheduled" or an in-progress state. */
+    @SerialName("status_state") val statusState: String = "",
     @SerialName("postseason") val postseason: Boolean = false,
     @SerialName("home_team") val homeTeam: TeamDto,
     @SerialName("home_team_score") val homeTeamScore: Int = 0,

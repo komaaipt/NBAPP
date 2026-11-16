@@ -9,8 +9,10 @@ import com.nb.app.domain.repository.GameRepository
 import com.nb.app.domain.repository.PlayerRepository
 import com.nb.app.domain.repository.TeamRepository
 import com.nb.app.presentation.home.HomeViewModel
+import com.nb.app.presentation.teamgames.TeamGamesViewModel
 import io.ktor.client.HttpClient
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
@@ -30,6 +32,7 @@ internal val dataModule: Module = module {
 
 internal val presentationModule: Module = module {
     viewModelOf(::HomeViewModel)
+    viewModel { params -> TeamGamesViewModel(teamId = params.get(), gameRepository = get()) }
 }
 
 internal val appModules: List<Module> =
