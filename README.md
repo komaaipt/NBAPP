@@ -22,15 +22,17 @@ The endpoints in the task (`https://www.balldontlie.io/api/v1/...`) no longer ex
 - uses **cursor pagination** (`meta.next_cursor` → `?cursor=`) instead of page numbers;
 - allows **5 requests per minute** on the free tier.
 
-Add the key to `local.properties` (it is git-ignored, so the key is never committed):
+The repository includes a key in [`nba-api.properties`](./nba-api.properties), so the app works right
+after cloning. Because every clone shares it, they also share its **5 requests per minute**; if the
+app shows "Too many requests", wait a minute, or use your own free key. The build reads the key
+from, in this order:
 
-```properties
-nba.api.key=YOUR_API_KEY
-```
+1. `local.properties` (git-ignored): `nba.api.key=YOUR_API_KEY`
+2. the `NBA_API_KEY` environment variable
+3. `nba-api.properties` in the repository
 
-or export it as the `NBA_API_KEY` environment variable. The `generateApiConfig` Gradle task turns
-it into the `ApiConfig` object used by the HTTP client. Without a key the app shows an
-"API key is missing or invalid" message.
+The `generateApiConfig` Gradle task turns it into the `ApiConfig` object used by the HTTP client.
+Without any key the app shows an "API key is missing or invalid" message.
 
 ### Running
 

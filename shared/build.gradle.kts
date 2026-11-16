@@ -9,16 +9,19 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
 }
 
-// The balldontlie API key is read from `local.properties` (`nba.api.key=...`) or from the
-// `NBA_API_KEY` environment variable, so it never needs to be committed.
+// The balldontlie API key comes from `local.properties` (`nba.api.key=...`), then from the
+// `NBA_API_KEY` environment variable, then from the `nba-api.properties` file in the repository.
 val nbaApiKey: String = run {
-    val localProperties = Properties()
-    val localPropertiesFile = rootProject.file("local.properties")
-    if (localPropertiesFile.exists()) {
-        localPropertiesFile.inputStream().use(localProperties::load)
+    fun readKey(fileName: String): String? {
+        val file = rootProject.file(fileName)
+        if (!file.exists()) return null
+        val properties = Properties()
+        file.inputStream().use(properties::load)
+        return properties.getProperty("nba.api.key")?.takeIf { it.isNotBlank() }
     }
-    localProperties.getProperty("nba.api.key")
-        ?: providers.environmentVariable("NBA_API_KEY").orNull
+    readKey("local.properties")
+        ?: providers.environmentVariable("NBA_API_KEY").orNull?.takeIf { it.isNotBlank() }
+        ?: readKey("nba-api.properties")
         ?: ""
 }
 
