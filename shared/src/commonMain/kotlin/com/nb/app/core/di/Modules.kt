@@ -13,15 +13,19 @@ import com.nb.app.presentation.players.PlayersViewModel
 import com.nb.app.presentation.teamgames.TeamGamesViewModel
 import io.ktor.client.HttpClient
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.onClose
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
+import org.koin.core.module.dsl.withOptions
 import org.koin.dsl.module
 
 /** Provides the platform [io.ktor.client.engine.HttpClientEngine] (OkHttp on Android, Darwin on iOS). */
 internal expect val platformModule: Module
 
 internal val networkModule: Module = module {
-    single<HttpClient> { createHttpClient(engine = get()) }
+    single<HttpClient> { createHttpClient(engine = get()) } withOptions {
+        onClose { it?.close() }
+    }
 }
 
 internal val dataModule: Module = module {
@@ -37,5 +41,6 @@ internal val presentationModule: Module = module {
     viewModel { params -> TeamGamesViewModel(teamId = params.get(), gameRepository = get()) }
 }
 
-internal val appModules: List<Module> =
-    listOf(platformModule, networkModule, dataModule, presentationModule)
+internal val appModule: Module = module {
+    includes(platformModule, networkModule, dataModule, presentationModule)
+}
