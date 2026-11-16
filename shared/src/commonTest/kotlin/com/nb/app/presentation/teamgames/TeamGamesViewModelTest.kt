@@ -18,7 +18,7 @@ class TeamGamesViewModelTest : MainDispatcherTest() {
 
     private val repository = FakeGameRepository()
 
-    private fun game(id: Int) = Game(id, "2026-11-0$id", "Final", hawks, 100 + id, celtics, 90 + id)
+    private fun game(id: Int) = Game(id, "2026-11-0$id", "Final", hawks, 100 + id, celtics, 90 + id, season = 2026)
 
     private fun page(vararg ids: Int, nextSeason: Int?) =
         Result.success(Page(items = ids.map(::game), nextCursor = nextSeason))

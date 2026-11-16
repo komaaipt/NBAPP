@@ -1,34 +1,42 @@
 package com.nb.app.presentation.home
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.nb.app.core.ui.components.DataTable
+import com.nb.app.core.ui.components.Badge
+import com.nb.app.core.ui.components.CardSpacing
 import com.nb.app.core.ui.components.EmptyState
 import com.nb.app.core.ui.components.ErrorState
+import com.nb.app.core.ui.components.ListCardRow
 import com.nb.app.core.ui.components.LoadingState
+import com.nb.app.core.ui.components.Pill
 import com.nb.app.core.ui.components.ScreenHeader
-import com.nb.app.core.ui.components.TableColumn
+import com.nb.app.core.ui.components.ScreenPadding
 import com.nb.app.core.ui.theme.NbaTheme
 import com.nb.app.core.ui.toMessage
 import com.nb.app.domain.model.Team
 import com.nb.app.presentation.navigation.SelectedTeam
 import com.nb.app.presentation.navigation.toSelectedTeam
 import nbapp.shared.generated.resources.Res
-import nbapp.shared.generated.resources.column_city
-import nbapp.shared.generated.resources.column_conference
-import nbapp.shared.generated.resources.column_name
 import nbapp.shared.generated.resources.home_title
 import nbapp.shared.generated.resources.ic_sort
 import org.jetbrains.compose.resources.painterResource
@@ -70,7 +78,7 @@ fun HomeContent(
         }
         val error = uiState.error
         when {
-            uiState.teams.isNotEmpty() -> TeamTable(teams = uiState.teams, onTeamClick = onTeamClick)
+            uiState.teams.isNotEmpty() -> TeamList(teams = uiState.teams, onTeamClick = onTeamClick)
             uiState.isLoading -> LoadingState()
             error != null -> ErrorState(message = error.toMessage(), onRetry = onRetryClick)
             else -> EmptyState()
@@ -86,12 +94,13 @@ fun HomeContent(
     }
 }
 
+/** Filled pill showing the current order; its title changes with the selected option. */
 @Composable
 private fun SortButton(
     sortOption: TeamSortOption,
     onClick: () -> Unit,
 ) {
-    FilledTonalButton(
+    Button(
         onClick = onClick,
         contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
     ) {
@@ -100,48 +109,72 @@ private fun SortButton(
             contentDescription = null,
             modifier = Modifier.size(ButtonDefaults.IconSize),
         )
-        Text(text = stringResource(sortOption.label))
+        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+        Text(text = stringResource(sortOption.label), style = MaterialTheme.typography.labelLarge)
     }
 }
 
 @Composable
-private fun TeamTable(
+private fun TeamList(
     teams: List<Team>,
     onTeamClick: (Team) -> Unit,
 ) {
-    val columns = listOf(
-        TableColumn(title = stringResource(Res.string.column_name), weight = 1.5f),
-        TableColumn(title = stringResource(Res.string.column_city), weight = 1.2f),
-        TableColumn(title = stringResource(Res.string.column_conference), textAlign = TextAlign.End),
-    )
-    DataTable(
-        columns = columns,
-        items = teams,
-        key = { it.id },
-        cells = { team -> listOf(team.fullName, team.city, team.conference) },
-        onItemClick = onTeamClick,
-    )
+    LazyColumn(
+        contentPadding = PaddingValues(start = ScreenPadding, end = ScreenPadding, bottom = ScreenPadding),
+        verticalArrangement = Arrangement.spacedBy(CardSpacing),
+    ) {
+        items(items = teams, key = { it.id }) { team ->
+            TeamCard(team = team, onClick = { onTeamClick(team) })
+        }
+    }
+}
+
+/** Abbreviation badge, full name and city, and the conference on the right. */
+@Composable
+private fun TeamCard(
+    team: Team,
+    onClick: () -> Unit,
+) {
+    ListCardRow(onClick = onClick) {
+        Badge(label = team.abbreviation)
+        Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp)) {
+            Text(
+                text = team.fullName,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = team.city,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Pill(
+            text = team.conference,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 @Preview
 @Composable
 private fun HomeContentPreview() {
     NbaTheme {
-        Surface {
-            HomeContent(
-                uiState = HomeUiState(
-                    teams = listOf(
-                        Team(1, "Atlanta Hawks", "Hawks", "Atlanta", "East", "ATL"),
-                        Team(2, "Boston Celtics", "Celtics", "Boston", "East", "BOS"),
-                        Team(10, "Golden State Warriors", "Warriors", "Golden State", "West", "GSW"),
-                    ),
+        HomeContent(
+            uiState = HomeUiState(
+                teams = listOf(
+                    Team(1, "Atlanta Hawks", "Hawks", "Atlanta", "East", "ATL"),
+                    Team(2, "Boston Celtics", "Celtics", "Boston", "East", "BOS"),
+                    Team(10, "Golden State Warriors", "Warriors", "Golden State", "West", "GSW"),
                 ),
-                onTeamClick = {},
-                onSortClick = {},
-                onSortOptionSelected = {},
-                onSortDialogDismiss = {},
-                onRetryClick = {},
-            )
-        }
+            ),
+            onTeamClick = {},
+            onSortClick = {},
+            onSortOptionSelected = {},
+            onSortDialogDismiss = {},
+            onRetryClick = {},
+        )
     }
 }

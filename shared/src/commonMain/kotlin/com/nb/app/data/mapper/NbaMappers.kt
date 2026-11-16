@@ -26,6 +26,7 @@ internal fun GameDto.toDomain(): Game = Game(
     homeTeamScore = homeTeamScore,
     visitorTeam = visitorTeam.toDomain(),
     visitorTeamScore = visitorTeamScore,
+    season = season ?: 0,
 )
 
 internal fun PlayerDto.toDomain(): Player = Player(

@@ -8,4 +8,6 @@ data class Game(
     val homeTeamScore: Int,
     val visitorTeam: Team,
     val visitorTeamScore: Int,
+    /** Season the game belongs to, e.g. 2026 for 2026-27. */
+    val season: Int,
 )

@@ -110,5 +110,11 @@ Tests use kotlin-test, kotlinx-coroutines-test and Ktor `MockEngine`.
   bounce and the name's fade, and is unit tested; `SplashScreen.kt` only draws it on a Canvas.
   The Android 12+ system splash is a plain background of the same color, so it hands over to the
   animation without a jump.
+- **Visual identity.** Light blue background (`#EAF1FF`), white cards and one action color, a modern
+  blue (`#2F6BFF`); the orange of the basketball is the only brand accent. Lists use cards instead
+  of tables so names never wrap on a phone: teams show an abbreviation badge, games are scoreboards
+  (the losing side muted, a W/L pill for the selected team, season headers) and players show their
+  initials. Titles and scores use Barlow Condensed and the rest Inter; both are under the SIL Open
+  Font License (see [`licenses/`](./licenses)). A matching dark scheme follows the system setting.
 - **State survives configuration changes.** ViewModels keep the data; the selected tab and team
   use `rememberSaveable`, and each tab keeps its scroll position when switching tabs.

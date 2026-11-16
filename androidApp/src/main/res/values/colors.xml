@@ -1,4 +1,4 @@
 <resources>
     <!-- Same as SplashBackground in the shared theme. -->
-    <color name="splash_background">#FF0B1630</color>
+    <color name="splash_background">#FF2F6BFF</color>
 </resources>
