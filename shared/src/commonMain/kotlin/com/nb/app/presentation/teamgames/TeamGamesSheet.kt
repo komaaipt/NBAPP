@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -22,7 +22,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,11 +32,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
+import androidx.paging.PagingData
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import com.nb.app.core.ui.components.Badge
 import com.nb.app.core.ui.components.CardSpacing
 import com.nb.app.core.ui.components.EmptyState
-import com.nb.app.core.ui.components.EndlessScrollEffect
 import com.nb.app.core.ui.components.ErrorState
 import com.nb.app.core.ui.components.ListCard
 import com.nb.app.core.ui.components.LoadingState
@@ -46,10 +48,12 @@ import com.nb.app.core.ui.components.ScreenPadding
 import com.nb.app.core.ui.components.pagingFooter
 import com.nb.app.core.ui.theme.NbaTheme
 import com.nb.app.core.ui.theme.scoreTextStyle
+import com.nb.app.core.ui.toApiError
 import com.nb.app.core.ui.toMessage
 import com.nb.app.domain.model.Game
 import com.nb.app.domain.model.Team
 import com.nb.app.presentation.navigation.SelectedTeam
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import nbapp.shared.generated.resources.Res
 import nbapp.shared.generated.resources.back_to_home
@@ -86,7 +90,7 @@ fun TeamGamesSheet(
         viewModelStoreOwner = viewModelStoreOwner,
         parameters = { parametersOf(team.id) },
     )
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val items = viewModel.items.collectAsLazyPagingItems()
 
     val sheetState = rememberBottomSheetState(
         initialValue = SheetValue.Hidden,
@@ -106,10 +110,8 @@ fun TeamGamesSheet(
     ) {
         TeamGamesContent(
             team = team,
-            uiState = uiState,
+            items = items,
             onBackClick = hideSheet,
-            onLoadMore = viewModel::onLoadMore,
-            onRetryClick = viewModel::onRetryClick,
         )
     }
 }
@@ -117,57 +119,45 @@ fun TeamGamesSheet(
 @Composable
 fun TeamGamesContent(
     team: SelectedTeam,
-    uiState: TeamGamesUiState,
+    items: LazyPagingItems<TeamGamesListItem>,
     onBackClick: () -> Unit,
-    onLoadMore: () -> Unit,
-    onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         TeamGamesTopBar(title = team.fullName, onBackClick = onBackClick)
-        val error = uiState.error
+        val refresh = items.loadState.refresh
         when {
-            uiState.games.isNotEmpty() -> GameList(
-                teamId = team.id,
-                uiState = uiState,
-                onLoadMore = onLoadMore,
-                onRetryClick = onRetryClick,
+            items.itemCount > 0 -> GameList(teamId = team.id, items = items)
+            refresh is LoadState.Loading -> LoadingState()
+            refresh is LoadState.Error -> ErrorState(
+                message = refresh.error.toApiError().toMessage(),
+                onRetry = items::retry,
             )
-            uiState.isLoading -> LoadingState()
-            error != null -> ErrorState(message = error.toMessage(), onRetry = onRetryClick)
             else -> EmptyState(message = Res.string.games_empty)
         }
     }
 }
 
-/** Games grouped by season, with a header every time the season changes. */
 @Composable
 private fun GameList(
     teamId: Int,
-    uiState: TeamGamesUiState,
-    onLoadMore: () -> Unit,
-    onRetryClick: () -> Unit,
+    items: LazyPagingItems<TeamGamesListItem>,
 ) {
-    val listState = rememberLazyListState()
-    EndlessScrollEffect(listState = listState, onLoadMore = onLoadMore)
-
     LazyColumn(
-        state = listState,
         contentPadding = PaddingValues(start = ScreenPadding, end = ScreenPadding, bottom = ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(CardSpacing),
     ) {
-        uiState.games.forEachIndexed { index, game ->
-            if (index == 0 || uiState.games[index - 1].season != game.season) {
-                item(key = "season_${game.season}") { SeasonHeader(season = game.season) }
+        items(count = items.itemCount, key = items.itemKey { it.key }) { index ->
+            when (val item = items[index]) {
+                is TeamGamesListItem.SeasonHeader -> SeasonHeader(season = item.season)
+                is TeamGamesListItem.GameRow -> GameCard(game = item.game, teamId = teamId)
+                null -> Unit
             }
-            item(key = game.id) { GameCard(game = game, teamId = teamId) }
         }
         pagingFooter(
-            isLoadingMore = uiState.isLoadingMore,
-            loadMoreError = uiState.loadMoreError,
-            endReached = uiState.endReached,
+            appendState = items.loadState.append,
             endReachedMessage = Res.string.games_end_reached,
-            onRetryClick = onRetryClick,
+            onRetryClick = items::retry,
         )
     }
 }
@@ -313,19 +303,16 @@ private fun TeamGamesTopBar(
 private fun TeamGamesContentPreview() {
     val hawks = Team(1, "Atlanta Hawks", "Hawks", "Atlanta", "East", "ATL")
     val bulls = Team(5, "Chicago Bulls", "Bulls", "Chicago", "East", "CHI")
+    val games = listOf(
+        TeamGamesListItem.SeasonHeader(2026),
+        TeamGamesListItem.GameRow(Game(1, "2026-11-15", "Final", hawks, 103, bulls, 101, season = 2026)),
+        TeamGamesListItem.GameRow(Game(2, "2026-11-12", "Final", bulls, 110, hawks, 99, season = 2026)),
+    )
     NbaTheme {
         TeamGamesContent(
             team = SelectedTeam(id = hawks.id, fullName = hawks.fullName),
-            uiState = TeamGamesUiState(
-                games = listOf(
-                    Game(1, "2026-11-15", "Final", hawks, 103, bulls, 101, season = 2026),
-                    Game(2, "2026-11-12", "Final", bulls, 110, hawks, 99, season = 2026),
-                ),
-                isLoadingMore = true,
-            ),
+            items = flowOf(PagingData.from(games)).collectAsLazyPagingItems(),
             onBackClick = {},
-            onLoadMore = {},
-            onRetryClick = {},
         )
     }
 }

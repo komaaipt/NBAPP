@@ -2,78 +2,42 @@ package com.nb.app.presentation.teamgames
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nb.app.core.ui.toApiError
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.insertSeparators
+import androidx.paging.map
 import com.nb.app.domain.repository.GameRepository
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
-/**
- * Games of the team with [teamId], loaded page by page (one season per page) for endless scroll.
- */
+internal val TeamGamesPagingConfig = PagingConfig(
+    pageSize = 100,
+    prefetchDistance = 5,
+    initialLoadSize = 100,
+    enablePlaceholders = false,
+)
+
 class TeamGamesViewModel(
     private val teamId: Int,
     private val gameRepository: GameRepository,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(TeamGamesUiState())
-    val uiState: StateFlow<TeamGamesUiState> = _uiState.asStateFlow()
-
-    private var nextSeason: Int? = null
-    private var loadJob: Job? = null
-
-    init {
-        loadPage(isFirstPage = true)
-    }
-
-    fun onLoadMore() {
-        val state = _uiState.value
-        if (state.games.isEmpty() || state.endReached || state.loadMoreError != null) return
-        loadPage(isFirstPage = false)
-    }
-
-    fun onRetryClick() {
-        loadPage(isFirstPage = _uiState.value.games.isEmpty())
-    }
-
-    private fun loadPage(isFirstPage: Boolean) {
-        if (loadJob?.isActive == true) return
-        _uiState.update {
-            it.copy(
-                isLoading = isFirstPage,
-                isLoadingMore = !isFirstPage,
-                error = null,
-                loadMoreError = null,
-            )
-        }
-        loadJob = viewModelScope.launch {
-            val season = if (isFirstPage) null else nextSeason
-            gameRepository.getTeamGames(teamId = teamId, season = season)
-                .onSuccess { page ->
-                    nextSeason = page.nextCursor
-                    _uiState.update {
-                        it.copy(
-                            games = it.games + page.items,
-                            isLoading = false,
-                            isLoadingMore = false,
-                            endReached = !page.hasMore,
-                        )
+    val items: Flow<PagingData<TeamGamesListItem>> =
+        Pager(config = TeamGamesPagingConfig) { TeamGamesPagingSource(teamId, gameRepository) }
+            .flow
+            .map { pagingData ->
+                pagingData
+                    .map { TeamGamesListItem.GameRow(it) }
+                    .insertSeparators { before: TeamGamesListItem.GameRow?, after: TeamGamesListItem.GameRow? ->
+                        val season = after?.game?.season
+                        if (season != null && season != before?.game?.season) {
+                            TeamGamesListItem.SeasonHeader(season)
+                        } else {
+                            null
+                        }
                     }
-                }
-                .onFailure { throwable ->
-                    val error = throwable.toApiError()
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            isLoadingMore = false,
-                            error = if (isFirstPage) error else null,
-                            loadMoreError = if (isFirstPage) null else error,
-                        )
-                    }
-                }
-        }
-    }
+            }
+            .cachedIn(viewModelScope)
 }
