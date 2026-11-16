@@ -104,6 +104,7 @@ kotlin {
                 implementation(libs.ktor.serialization.kotlinxJson)
 
                 api(libs.koin.core)
+                implementation(libs.koin.composeViewmodel)
             }
         }
         commonTest.dependencies {

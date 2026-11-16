@@ -22,7 +22,12 @@ internal class TeamRepositoryImpl(
         if (cached != null && !forceRefresh) {
             return@withLock Result.success(cached)
         }
-        safeApiCall { remoteDataSource.getTeams().data.map { it.toDomain() } }
+        safeApiCall {
+            remoteDataSource.getTeams().data
+                // The API also returns defunct franchises, which have no conference.
+                .filter { it.conference.isNotBlank() }
+                .map { it.toDomain() }
+        }
             .onSuccess { cachedTeams = it }
     }
 }

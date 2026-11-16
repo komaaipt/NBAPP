@@ -12,6 +12,10 @@ internal object Fixtures {
             {
               "id": 2, "conference": "East", "division": "Atlantic", "city": "Boston",
               "name": "Celtics", "full_name": "Boston Celtics", "abbreviation": "BOS"
+            },
+            {
+              "id": 37, "conference": " ", "division": " ", "city": "Chicago",
+              "name": "Stags", "full_name": "Chicago Stags", "abbreviation": "CHS"
             }
           ]
         }

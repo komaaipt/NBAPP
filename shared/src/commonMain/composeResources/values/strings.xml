@@ -12,6 +12,13 @@
     <string name="column_city">City</string>
     <string name="column_conference">Conference</string>
 
+    <!-- Sorting -->
+    <string name="sort_dialog_title">Sort by</string>
+    <string name="sort_name">Name</string>
+    <string name="sort_city">City</string>
+    <string name="sort_conference">Conference</string>
+    <string name="cancel">Cancel</string>
+
     <!-- Games table -->
     <string name="column_home_name">Home Name</string>
     <string name="column_home_score">Home Score</string>

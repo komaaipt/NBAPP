@@ -36,6 +36,16 @@ class TeamRepositoryImplTest {
     }
 
     @Test
+    fun getTeams_leavesOutDefunctTeamsWithoutConference() = runTest {
+        val http = TestHttpClient { respondJson(Fixtures.TEAMS_JSON) }
+        val repository = TeamRepositoryImpl(NbaRemoteDataSource(http.client))
+
+        val teams = repository.getTeams().getOrThrow()
+
+        assertEquals(listOf("Atlanta Hawks", "Boston Celtics"), teams.map { it.fullName })
+    }
+
+    @Test
     fun getTeams_usesCacheUntilForceRefresh() = runTest {
         val http = TestHttpClient { respondJson(Fixtures.TEAMS_JSON) }
         val repository = TeamRepositoryImpl(NbaRemoteDataSource(http.client))

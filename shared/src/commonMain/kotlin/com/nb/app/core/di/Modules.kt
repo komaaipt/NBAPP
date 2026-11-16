@@ -8,8 +8,10 @@ import com.nb.app.data.repository.TeamRepositoryImpl
 import com.nb.app.domain.repository.GameRepository
 import com.nb.app.domain.repository.PlayerRepository
 import com.nb.app.domain.repository.TeamRepository
+import com.nb.app.presentation.home.HomeViewModel
 import io.ktor.client.HttpClient
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 /** Provides the platform [io.ktor.client.engine.HttpClientEngine] (OkHttp on Android, Darwin on iOS). */
@@ -26,4 +28,9 @@ internal val dataModule: Module = module {
     single<PlayerRepository> { PlayerRepositoryImpl(remoteDataSource = get()) }
 }
 
-internal val appModules: List<Module> = listOf(platformModule, networkModule, dataModule)
+internal val presentationModule: Module = module {
+    viewModelOf(::HomeViewModel)
+}
+
+internal val appModules: List<Module> =
+    listOf(platformModule, networkModule, dataModule, presentationModule)
