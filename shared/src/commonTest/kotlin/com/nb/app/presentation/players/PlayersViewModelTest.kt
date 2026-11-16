@@ -106,7 +106,7 @@ class PlayersViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         viewModel.onQueryChange("curry")
         waitForDebounce()
 
-        viewModel.onClearQueryClick()
+        viewModel.onQueryChange("")
         waitForDebounce()
 
         assertEquals("", viewModel.query.value)

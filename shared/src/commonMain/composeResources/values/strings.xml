@@ -35,6 +35,9 @@
     <!-- Player search -->
     <string name="search_players_hint">Search players by name</string>
     <string name="clear_search_description">Clear search</string>
+    <string name="close_search_description">Close search</string>
+    <string name="open_search_description">Search players</string>
+    <string name="players_prompt_tap_search">Tap the search button to find players by name.</string>
     <string name="players_prompt">Type at least 2 letters to search for players.</string>
     <string name="players_empty">No players found for "%1$s".</string>
     <string name="players_end_reached">No more players.</string>

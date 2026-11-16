@@ -1,29 +1,24 @@
 package com.nb.app.presentation.players
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -36,12 +31,13 @@ import androidx.paging.compose.itemKey
 import com.nb.app.core.ui.components.Badge
 import com.nb.app.core.ui.components.CardSpacing
 import com.nb.app.core.ui.components.ChevronIcon
-import com.nb.app.core.ui.components.ListCardRow
-import com.nb.app.core.ui.components.ScreenPadding
 import com.nb.app.core.ui.components.EmptyState
 import com.nb.app.core.ui.components.ErrorState
+import com.nb.app.core.ui.components.ExpandingSearchFab
+import com.nb.app.core.ui.components.ListCardRow
 import com.nb.app.core.ui.components.LoadingState
 import com.nb.app.core.ui.components.ScreenHeader
+import com.nb.app.core.ui.components.ScreenPadding
 import com.nb.app.core.ui.components.pagingFooter
 import com.nb.app.core.ui.theme.NbaTheme
 import com.nb.app.core.ui.toApiError
@@ -50,18 +46,15 @@ import com.nb.app.domain.model.Player
 import com.nb.app.domain.model.Team
 import com.nb.app.presentation.navigation.SelectedTeam
 import com.nb.app.presentation.navigation.toSelectedTeam
+import kotlinx.coroutines.flow.flowOf
 import nbapp.shared.generated.resources.Res
-import nbapp.shared.generated.resources.clear_search_description
-import nbapp.shared.generated.resources.ic_close
-import nbapp.shared.generated.resources.ic_search
 import nbapp.shared.generated.resources.players_empty
 import nbapp.shared.generated.resources.players_end_reached
 import nbapp.shared.generated.resources.players_prompt
+import nbapp.shared.generated.resources.players_prompt_tap_search
 import nbapp.shared.generated.resources.players_title
 import nbapp.shared.generated.resources.search_players_hint
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import kotlinx.coroutines.flow.flowOf
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Players tab: search players by name; tapping one opens their team's games. */
@@ -74,12 +67,14 @@ fun PlayersScreen(
     val query by viewModel.query.collectAsStateWithLifecycle()
     val searchedQuery by viewModel.searchedQuery.collectAsStateWithLifecycle()
     val players = viewModel.players.collectAsLazyPagingItems()
+    var isSearchExpanded by rememberSaveable { mutableStateOf(query.isNotEmpty()) }
     PlayersContent(
         query = query,
         searchedQuery = searchedQuery,
         players = players,
+        isSearchExpanded = isSearchExpanded,
+        onSearchExpandedChange = { isSearchExpanded = it },
         onQueryChange = viewModel::onQueryChange,
-        onClearQueryClick = viewModel::onClearQueryClick,
         onPlayerClick = { player -> player.team?.let { onPlayerTeamClick(it.toSelectedTeam()) } },
         modifier = modifier,
     )
@@ -90,73 +85,37 @@ fun PlayersContent(
     query: String,
     searchedQuery: String,
     players: LazyPagingItems<Player>,
+    isSearchExpanded: Boolean,
+    onSearchExpandedChange: (Boolean) -> Unit,
     onQueryChange: (String) -> Unit,
-    onClearQueryClick: () -> Unit,
     onPlayerClick: (Player) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        ScreenHeader(title = stringResource(Res.string.players_title))
-        SearchField(
-            query = query,
-            onQueryChange = onQueryChange,
-            onClearClick = onClearQueryClick,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
-        )
-        val refresh = players.loadState.refresh
-        when {
-            searchedQuery.length < MIN_QUERY_LENGTH -> EmptyState(message = Res.string.players_prompt)
-            players.itemCount > 0 -> PlayerList(players = players, onPlayerClick = onPlayerClick)
-            refresh is LoadState.Loading -> LoadingState()
-            refresh is LoadState.Error -> ErrorState(
-                message = refresh.error.toApiError().toMessage(),
-                onRetry = players::retry,
-            )
-            else -> EmptyState(message = Res.string.players_empty, formatArgs = listOf(searchedQuery))
-        }
-    }
-}
-
-@Composable
-private fun SearchField(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onClearClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val keyboardController = LocalSoftwareKeyboardController.current
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
-        modifier = modifier.fillMaxWidth(),
-        placeholder = { Text(stringResource(Res.string.search_players_hint)) },
-        leadingIcon = {
-            Icon(painter = painterResource(Res.drawable.ic_search), contentDescription = null)
-        },
-        trailingIcon = {
-            if (query.isNotEmpty()) {
-                IconButton(onClick = onClearClick) {
-                    Icon(
-                        painter = painterResource(Res.drawable.ic_close),
-                        contentDescription = stringResource(Res.string.clear_search_description),
-                    )
-                }
+    Box(modifier = modifier.fillMaxSize().imePadding()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            ScreenHeader(title = stringResource(Res.string.players_title))
+            val refresh = players.loadState.refresh
+            when {
+                !isSearchExpanded && query.isEmpty() -> EmptyState(message = Res.string.players_prompt_tap_search)
+                searchedQuery.length < MIN_QUERY_LENGTH -> EmptyState(message = Res.string.players_prompt)
+                players.itemCount > 0 -> PlayerList(players = players, onPlayerClick = onPlayerClick)
+                refresh is LoadState.Loading -> LoadingState()
+                refresh is LoadState.Error -> ErrorState(
+                    message = refresh.error.toApiError().toMessage(),
+                    onRetry = players::retry,
+                )
+                else -> EmptyState(message = Res.string.players_empty, formatArgs = listOf(searchedQuery))
             }
-        },
-        singleLine = true,
-        shape = CircleShape,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-        ),
-        keyboardOptions = KeyboardOptions(
-            capitalization = KeyboardCapitalization.Words,
-            autoCorrectEnabled = false,
-            imeAction = ImeAction.Search,
-        ),
-        keyboardActions = KeyboardActions(onSearch = { keyboardController?.hide() }),
-    )
+        }
+        ExpandingSearchFab(
+            expanded = isSearchExpanded,
+            query = query,
+            placeholder = stringResource(Res.string.search_players_hint),
+            onExpandedChange = onSearchExpandedChange,
+            onQueryChange = onQueryChange,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(ScreenPadding),
+        )
+    }
 }
 
 @Composable
@@ -165,7 +124,7 @@ private fun PlayerList(
     onPlayerClick: (Player) -> Unit,
 ) {
     LazyColumn(
-        contentPadding = PaddingValues(start = ScreenPadding, end = ScreenPadding, bottom = ScreenPadding),
+        contentPadding = PaddingValues(start = ScreenPadding, end = ScreenPadding, bottom = SearchFabClearance),
         verticalArrangement = Arrangement.spacedBy(CardSpacing),
     ) {
         items(count = players.itemCount, key = players.itemKey { it.id }) { index ->
@@ -179,6 +138,8 @@ private fun PlayerList(
         )
     }
 }
+
+private val SearchFabClearance = 88.dp
 
 /** Initials, full name and team. Historical players without a team aren't clickable. */
 @Composable
@@ -224,8 +185,9 @@ private fun PlayersContentPreview() {
                 query = "Ilgauskas",
                 searchedQuery = "Ilgauskas",
                 players = flowOf(PagingData.from(players)).collectAsLazyPagingItems(),
+                isSearchExpanded = true,
+                onSearchExpandedChange = {},
                 onQueryChange = {},
-                onClearQueryClick = {},
                 onPlayerClick = {},
             )
         }

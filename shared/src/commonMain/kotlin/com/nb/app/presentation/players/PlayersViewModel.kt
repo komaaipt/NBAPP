@@ -67,8 +67,4 @@ class PlayersViewModel(
     fun onQueryChange(query: String) {
         _query.value = query
     }
-
-    fun onClearQueryClick() {
-        _query.value = ""
-    }
 }
