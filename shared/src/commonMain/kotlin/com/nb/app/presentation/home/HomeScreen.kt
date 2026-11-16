@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -35,6 +36,8 @@ import com.nb.app.core.ui.theme.NbaTheme
 import com.nb.app.core.ui.toMessage
 import com.nb.app.domain.model.Team
 import com.nb.app.presentation.navigation.SelectedTeam
+import com.nb.app.presentation.navigation.ShowBottomBarEffect
+import com.nb.app.presentation.navigation.ShowBottomBarWhenNotScrollable
 import com.nb.app.presentation.navigation.bottomBarHeight
 import com.nb.app.presentation.navigation.toSelectedTeam
 import nbapp.shared.generated.resources.Res
@@ -78,6 +81,7 @@ fun HomeContent(
             SortButton(sortOption = uiState.sortOption, onClick = onSortClick)
         }
         val error = uiState.error
+        if (uiState.teams.isEmpty()) ShowBottomBarEffect()
         when {
             uiState.teams.isNotEmpty() -> TeamList(teams = uiState.teams, onTeamClick = onTeamClick)
             uiState.isLoading -> LoadingState()
@@ -120,7 +124,10 @@ private fun TeamList(
     teams: List<Team>,
     onTeamClick: (Team) -> Unit,
 ) {
+    val listState = rememberLazyListState()
+    ShowBottomBarWhenNotScrollable(listState)
     LazyColumn(
+        state = listState,
         contentPadding = PaddingValues(start = ScreenPadding, end = ScreenPadding, bottom = ScreenPadding + bottomBarHeight()),
         verticalArrangement = Arrangement.spacedBy(CardSpacing),
     ) {

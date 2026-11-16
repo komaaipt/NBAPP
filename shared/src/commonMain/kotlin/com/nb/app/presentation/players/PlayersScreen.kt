@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -52,6 +53,8 @@ import com.nb.app.domain.model.Player
 import com.nb.app.domain.model.Team
 import com.nb.app.presentation.navigation.LocalBottomBarScrollState
 import com.nb.app.presentation.navigation.SelectedTeam
+import com.nb.app.presentation.navigation.ShowBottomBarEffect
+import com.nb.app.presentation.navigation.ShowBottomBarWhenNotScrollable
 import com.nb.app.presentation.navigation.bottomBarHeight
 import com.nb.app.presentation.navigation.toSelectedTeam
 import kotlinx.coroutines.flow.flowOf
@@ -103,6 +106,10 @@ fun PlayersContent(
         Column(modifier = Modifier.fillMaxSize().imePadding()) {
             ScreenHeader(title = stringResource(Res.string.players_title))
             val refresh = players.loadState.refresh
+            val showsList = (isSearchExpanded || query.isNotEmpty()) &&
+                searchedQuery.length >= MIN_QUERY_LENGTH &&
+                players.itemCount > 0
+            if (!showsList) ShowBottomBarEffect()
             when {
                 !isSearchExpanded && query.isEmpty() -> EmptyState(message = Res.string.players_prompt_tap_search)
                 searchedQuery.length < MIN_QUERY_LENGTH -> EmptyState(message = Res.string.players_prompt)
@@ -152,7 +159,10 @@ private fun PlayerList(
     players: LazyPagingItems<Player>,
     onPlayerClick: (Player) -> Unit,
 ) {
+    val listState = rememberLazyListState()
+    ShowBottomBarWhenNotScrollable(listState)
     LazyColumn(
+        state = listState,
         contentPadding = PaddingValues(start = ScreenPadding, end = ScreenPadding, bottom = SearchFabClearance + bottomBarHeight()),
         verticalArrangement = Arrangement.spacedBy(CardSpacing),
     ) {

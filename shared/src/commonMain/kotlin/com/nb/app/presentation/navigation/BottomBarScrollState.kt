@@ -1,12 +1,15 @@
 package com.nb.app.presentation.navigation
 
 import androidx.compose.animation.core.animate
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -15,6 +18,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import kotlin.math.abs
+import kotlinx.coroutines.flow.filter
 
 /**
  * Hides the bottom navigation bar while the content scrolls towards the end and brings it back
@@ -60,6 +64,24 @@ val LocalBottomBarScrollState = staticCompositionLocalOf { BottomBarScrollState(
 
 @Composable
 fun rememberBottomBarScrollState(): BottomBarScrollState = remember { BottomBarScrollState() }
+
+/** Shows the bottom bar while in composition, for content that can't be scrolled to reveal it. */
+@Composable
+fun ShowBottomBarEffect() {
+    val state = LocalBottomBarScrollState.current
+    LaunchedEffect(state) { state.show() }
+}
+
+/** Shows the bottom bar whenever [listState] can't scroll in either direction. */
+@Composable
+fun ShowBottomBarWhenNotScrollable(listState: LazyListState) {
+    val state = LocalBottomBarScrollState.current
+    LaunchedEffect(listState, state) {
+        snapshotFlow { listState.canScrollForward || listState.canScrollBackward }
+            .filter { canScroll -> !canScroll }
+            .collect { state.show() }
+    }
+}
 
 /** Full height of the bottom bar, to keep the end of a list reachable above it. */
 @Composable
