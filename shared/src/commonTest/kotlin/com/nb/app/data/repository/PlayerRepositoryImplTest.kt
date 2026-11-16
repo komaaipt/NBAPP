@@ -6,16 +6,44 @@ import com.nb.app.data.Fixtures
 import com.nb.app.data.TestHttpClient
 import com.nb.app.data.remote.NbaRemoteDataSource
 import com.nb.app.data.respondJson
-import kotlinx.coroutines.test.runTest
-import kotlinx.io.IOException
+import com.nb.app.testing.FakeClock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.test.runTest
+import kotlinx.io.IOException
 
 class PlayerRepositoryImplTest {
+
+    private val clock = FakeClock()
+
+    @Test
+    fun sameSearchTwice_callsTheApiOnce() = runTest {
+        val http = TestHttpClient { respondJson(Fixtures.PLAYERS_JSON) }
+        val repository = PlayerRepositoryImpl(NbaRemoteDataSource(http.client), clock = clock)
+
+        repository.searchPlayers("curry")
+        repository.searchPlayers(" Curry ")
+        repository.searchPlayers("curry", cursor = 25)
+
+        assertEquals(2, http.requests.size)
+    }
+
+    @Test
+    fun search_expiresAfterFiveMinutes() = runTest {
+        val http = TestHttpClient { respondJson(Fixtures.PLAYERS_JSON) }
+        val repository = PlayerRepositoryImpl(NbaRemoteDataSource(http.client), clock = clock)
+
+        repository.searchPlayers("curry")
+        clock.advanceBy(6.minutes)
+        repository.searchPlayers("curry")
+
+        assertEquals(2, http.requests.size)
+    }
 
     @Test
     fun searchPlayers_sendsTrimmedQueryAndMapsPlayers() = runTest {

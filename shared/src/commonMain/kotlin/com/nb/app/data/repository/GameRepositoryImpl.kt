@@ -1,21 +1,28 @@
 package com.nb.app.data.repository
 
 import com.nb.app.core.network.safeApiCall
+import com.nb.app.data.cache.MemoryCache
 import com.nb.app.data.mapper.toDomain
 import com.nb.app.data.remote.NbaRemoteDataSource
 import com.nb.app.data.remote.dto.GameDto
 import com.nb.app.domain.model.Game
 import com.nb.app.domain.model.Page
 import com.nb.app.domain.repository.GameRepository
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
 
 /** A regular season plus playoffs fits in one or two requests of this size (the API maximum). */
 private const val SEASON_PAGE_SIZE = 100
 private const val SCHEDULED_STATE = "scheduled"
+private val CurrentSeasonTimeToLive = 5.minutes
 
 internal class GameRepositoryImpl(
     private val remoteDataSource: NbaRemoteDataSource,
     private val currentSeason: () -> Int = { currentNbaSeason() },
+    clock: Clock = Clock.System,
 ) : GameRepository {
+
+    private val seasonCache = MemoryCache<Pair<Int, Int>, List<Game>>(clock)
 
     override suspend fun getTeamGames(teamId: Int, season: Int?): Result<Page<Game>> = safeApiCall {
         var loadedSeason = season ?: currentSeason()
@@ -35,8 +42,15 @@ internal class GameRepositoryImpl(
         )
     }
 
+    // Past seasons never change; the current one gets new games, so it expires.
+    private suspend fun fetchSeason(teamId: Int, season: Int): List<Game> =
+        seasonCache.getOrLoad(
+            key = teamId to season,
+            timeToLive = if (season >= currentSeason()) CurrentSeasonTimeToLive else null,
+        ) { fetchSeasonFromApi(teamId, season) }
+
     /** Loads every played game of [season], following the API cursor, newest first. */
-    private suspend fun fetchSeason(teamId: Int, season: Int): List<Game> {
+    private suspend fun fetchSeasonFromApi(teamId: Int, season: Int): List<Game> {
         val games = mutableListOf<GameDto>()
         var cursor: Int? = null
         do {

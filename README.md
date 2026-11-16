@@ -97,9 +97,11 @@ Tests use kotlin-test, kotlinx-coroutines-test and Ktor `MockEngine`.
   tip-off, when the current season has no games yet, the first page shows the last season.
 - **Only current teams.** `/teams` also returns 59 defunct franchises (e.g. Chicago Stags) with an
   empty conference. They are filtered out, leaving the 30 current teams.
-- **Respecting the rate limit.** The team list is cached in memory, the player search waits
-  500 ms after the user stops typing and needs at least 2 letters, older searches are cancelled,
-  and a failed "load more" waits for the user to tap Retry instead of retrying on every scroll.
+- **Respecting the rate limit.** Responses are cached in memory: the team list for the session,
+  past seasons of games for the session, the current season and player searches for 5 minutes
+  (failures are never cached). The player search waits 500 ms after the user stops typing and
+  needs at least 2 letters, older searches are cancelled, and a failed "load more" waits for the
+  user to tap Retry instead of retrying on every scroll.
 - **Sorting is local.** All teams come in one response, so sorting just reorders the list; ties
   are broken by the full name so the order is stable.
 - **One bottom sheet, two entry points.** The sheet is driven by a `SelectedTeam` (team id + name)

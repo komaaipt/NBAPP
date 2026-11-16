@@ -7,18 +7,85 @@ import com.nb.app.data.Fixtures.GameRow
 import com.nb.app.data.TestHttpClient
 import com.nb.app.data.remote.NbaRemoteDataSource
 import com.nb.app.data.respondJson
+import com.nb.app.testing.FakeClock
 import io.ktor.http.HttpStatusCode
-import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.test.runTest
 
 class GameRepositoryImplTest {
 
+    private val clock = FakeClock()
+
     private fun repository(http: TestHttpClient, currentSeason: Int = 2026) =
-        GameRepositoryImpl(NbaRemoteDataSource(http.client), currentSeason = { currentSeason })
+        GameRepositoryImpl(NbaRemoteDataSource(http.client), currentSeason = { currentSeason }, clock = clock)
+
+    private fun seasonResponder() = TestHttpClient {
+        respondJson(Fixtures.gamesJson(listOf(GameRow(id = 1, date = "2026-11-01"))))
+    }
+
+    @Test
+    fun sameSeasonTwice_callsTheApiOnce() = runTest {
+        val http = seasonResponder()
+        val repository = repository(http)
+
+        repository.getTeamGames(teamId = 6, season = 2024)
+        repository.getTeamGames(teamId = 6, season = 2024)
+        repository.getTeamGames(teamId = 7, season = 2024)
+
+        assertEquals(2, http.requests.size)
+    }
+
+    @Test
+    fun currentSeason_expiresAfterFiveMinutes() = runTest {
+        val http = seasonResponder()
+        val repository = repository(http)
+
+        repository.getTeamGames(teamId = 6)
+        clock.advanceBy(4.minutes)
+        repository.getTeamGames(teamId = 6)
+        assertEquals(1, http.requests.size)
+
+        clock.advanceBy(2.minutes)
+        repository.getTeamGames(teamId = 6)
+        assertEquals(2, http.requests.size)
+    }
+
+    @Test
+    fun pastSeason_neverExpires() = runTest {
+        val http = seasonResponder()
+        val repository = repository(http)
+
+        repository.getTeamGames(teamId = 6, season = 2020)
+        clock.advanceBy(10.hours)
+        repository.getTeamGames(teamId = 6, season = 2020)
+
+        assertEquals(1, http.requests.size)
+    }
+
+    @Test
+    fun failure_isNotCached() = runTest {
+        var calls = 0
+        val http = TestHttpClient {
+            calls++
+            if (calls == 1) {
+                respondJson("Too Many Requests", HttpStatusCode.TooManyRequests)
+            } else {
+                respondJson(Fixtures.gamesJson(listOf(GameRow(id = 1, date = "2026-11-01"))))
+            }
+        }
+        val repository = repository(http)
+
+        assertTrue(repository.getTeamGames(teamId = 6, season = 2024).isFailure)
+        assertTrue(repository.getTeamGames(teamId = 6, season = 2024).isSuccess)
+        assertEquals(2, http.requests.size)
+    }
 
     @Test
     fun firstPage_loadsCurrentSeasonNewestFirstWithoutScheduledGames() = runTest {
