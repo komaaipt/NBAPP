@@ -12,6 +12,18 @@ This is a Kotlin Multiplatform project targeting Android, iOS.
     Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./shared/src/jvmMain/kotlin)
     folder is the appropriate location.
 
+### API key
+
+The app uses the [balldontlie](https://www.balldontlie.io) API (`https://api.balldontlie.io/v1`),
+which requires a free API key. Add it to `local.properties` (not committed):
+
+```properties
+nba.api.key=YOUR_API_KEY
+```
+
+or export it as the `NBA_API_KEY` environment variable. The `generateApiConfig` Gradle task turns it
+into the `ApiConfig` object used by the HTTP client. The free tier allows 5 requests per minute.
+
 ### Running the apps
 
 Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
