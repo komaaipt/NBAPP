@@ -7,6 +7,7 @@ import com.nb.app.data.remote.NbaRemoteDataSource
 import com.nb.app.data.remote.dto.GameDto
 import com.nb.app.domain.model.Game
 import com.nb.app.domain.model.Page
+import com.nb.app.domain.model.Team
 import com.nb.app.domain.repository.GameRepository
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
@@ -64,9 +65,10 @@ internal class GameRepositoryImpl(
             cursor = response.meta?.nextCursor
         } while (cursor != null)
 
+        val sharedTeams = HashMap<Int, Team>()
         return games
             .filter { it.statusState != SCHEDULED_STATE }
-            .map { it.toDomain() }
+            .map { game -> game.toDomain(teamOf = { dto -> sharedTeams.getOrPut(dto.id) { dto.toDomain() } }) }
             .sortedWith(compareByDescending<Game> { it.date }.thenByDescending { it.id })
     }
 }

@@ -14,6 +14,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -28,6 +29,22 @@ class GameRepositoryImplTest {
 
     private fun seasonResponder() = TestHttpClient {
         respondJson(Fixtures.gamesJson(listOf(GameRow(id = 1, date = "2026-11-01"))))
+    }
+
+    @Test
+    fun gamesOfASeason_shareOneInstancePerTeam() = runTest {
+        val http = TestHttpClient {
+            respondJson(
+                Fixtures.gamesJson(
+                    listOf(GameRow(id = 1, date = "2026-11-01"), GameRow(id = 2, date = "2026-11-03")),
+                ),
+            )
+        }
+
+        val games = repository(http).getTeamGames(teamId = 6, season = 2026).getOrThrow().items
+
+        assertSame(games[0].homeTeam, games[1].homeTeam)
+        assertSame(games[0].visitorTeam, games[1].visitorTeam)
     }
 
     @Test

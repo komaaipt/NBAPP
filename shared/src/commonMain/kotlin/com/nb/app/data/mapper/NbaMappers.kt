@@ -18,13 +18,13 @@ internal fun TeamDto.toDomain(): Team = Team(
     abbreviation = abbreviation,
 )
 
-internal fun GameDto.toDomain(): Game = Game(
+internal fun GameDto.toDomain(teamOf: (TeamDto) -> Team = { it.toDomain() }): Game = Game(
     id = id,
     date = date,
     status = status,
-    homeTeam = homeTeam.toDomain(),
+    homeTeam = teamOf(homeTeam),
     homeTeamScore = homeTeamScore,
-    visitorTeam = visitorTeam.toDomain(),
+    visitorTeam = teamOf(visitorTeam),
     visitorTeamScore = visitorTeamScore,
     season = season ?: 0,
 )
