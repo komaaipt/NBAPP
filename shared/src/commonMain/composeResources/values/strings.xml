@@ -1,0 +1,44 @@
+<resources>
+    <!-- Tabs -->
+    <string name="tab_home">Home</string>
+    <string name="tab_players">Players</string>
+
+    <!-- Screen titles -->
+    <string name="home_title">Home</string>
+    <string name="players_title">Players</string>
+
+    <!-- Teams table -->
+    <string name="column_name">Name</string>
+    <string name="column_city">City</string>
+    <string name="column_conference">Conference</string>
+
+    <!-- Games table -->
+    <string name="column_home_name">Home Name</string>
+    <string name="column_home_score">Home Score</string>
+    <string name="column_visitor_name">Visitor Name</string>
+    <string name="column_visitor_score">Visitor Score</string>
+
+    <!-- Players table -->
+    <string name="column_first_name">First Name</string>
+    <string name="column_last_name">Last Name</string>
+    <string name="column_team">Team</string>
+
+    <!-- Team games sheet -->
+    <string name="back_to_home">Home</string>
+    <string name="back_to_home_description">Back to Home</string>
+
+    <!-- Common states -->
+    <string name="loading_description">Loading</string>
+    <string name="retry">Retry</string>
+    <string name="empty_list">Nothing to show here yet.</string>
+    <string name="open_details_description">Open details</string>
+
+    <!-- Errors -->
+    <string name="error_network">Couldn\'t reach the server. Check your connection and try again.</string>
+    <string name="error_unauthorized">The API key is missing or invalid. Add nba.api.key to local.properties.</string>
+    <string name="error_rate_limited">Too many requests. Please wait a minute and try again.</string>
+    <string name="error_not_found">The requested data was not found.</string>
+    <string name="error_server">The server had a problem. Please try again later.</string>
+    <string name="error_serialization">Received unexpected data from the server.</string>
+    <string name="error_unknown">Something went wrong. Please try again.</string>
+</resources>

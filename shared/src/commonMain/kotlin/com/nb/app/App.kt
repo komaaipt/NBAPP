@@ -1,49 +1,61 @@
 package com.nb.app
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import org.jetbrains.compose.resources.painterResource
+import com.nb.app.core.ui.theme.NbaTheme
+import com.nb.app.presentation.home.HomeScreen
+import com.nb.app.presentation.navigation.AppTab
+import com.nb.app.presentation.navigation.NbaBottomBar
+import com.nb.app.presentation.navigation.SelectedTeam
+import com.nb.app.presentation.players.PlayersScreen
+import com.nb.app.presentation.teamgames.TeamGamesSheet
 
-import nbapp.shared.generated.resources.Res
-import nbapp.shared.generated.resources.compose_multiplatform
-
+/**
+ * Root of the app: two tabs (Home and Players) and the team games bottom sheet,
+ * which both tabs open by setting [SelectedTeam].
+ */
 @Composable
-@Preview
 fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
-            }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
+    NbaTheme {
+        var currentTab by rememberSaveable { mutableStateOf(AppTab.HOME) }
+        var selectedTeam by rememberSaveable(stateSaver = SelectedTeam.Saver) {
+            mutableStateOf<SelectedTeam?>(null)
+        }
+        // Keeps each tab's saveable UI state (scroll position, search text...) while switching tabs.
+        val tabStateHolder = rememberSaveableStateHolder()
+
+        Scaffold(
+            bottomBar = {
+                NbaBottomBar(currentTab = currentTab, onTabSelected = { currentTab = it })
+            },
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding),
+            ) {
+                tabStateHolder.SaveableStateProvider(key = currentTab.name) {
+                    when (currentTab) {
+                        AppTab.HOME -> HomeScreen(onTeamClick = { selectedTeam = it })
+                        AppTab.PLAYERS -> PlayersScreen(onPlayerTeamClick = { selectedTeam = it })
+                    }
                 }
             }
+        }
+
+        selectedTeam?.let { team ->
+            TeamGamesSheet(team = team, onDismiss = { selectedTeam = null })
         }
     }
 }
