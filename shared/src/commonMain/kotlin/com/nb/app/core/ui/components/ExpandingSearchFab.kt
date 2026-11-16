@@ -27,7 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,11 +89,13 @@ fun ExpandingSearchFab(
         onBackCompleted = collapse,
     )
 
-    LaunchedEffect(expanded) {
-        if (expanded) {
+    var focusOnExpand by remember { mutableStateOf(false) }
+    LaunchedEffect(expanded, focusOnExpand) {
+        if (expanded && focusOnExpand) {
             withFrameNanos { }
             focusRequester.requestFocus()
             keyboardController?.show()
+            focusOnExpand = false
         }
     }
 
@@ -120,6 +124,7 @@ fun ExpandingSearchFab(
                         Modifier
                     } else {
                         Modifier.clickable(onClickLabel = openDescription, role = Role.Button) {
+                            focusOnExpand = true
                             onExpandedChange(true)
                         }
                     },
