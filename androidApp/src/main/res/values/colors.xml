@@ -1,4 +1,5 @@
 <resources>
     <!-- Top color of the app background gradient (LightBackground in the shared theme). -->
     <color name="splash_background">#FFEAF1FF</color>
+    <color name="ic_launcher_background">#FF0F1B3D</color>
 </resources>
