@@ -20,6 +20,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
@@ -63,7 +64,10 @@ fun App() {
         val isScreenReaderOn = isScreenReaderOn()
         LaunchedEffect(currentTab, isScreenReaderOn) { bottomBarState.show() }
 
-        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        val backgroundGradient = Brush.verticalGradient(
+            listOf(MaterialTheme.colorScheme.background, NbaTheme.colors.backgroundGradientEnd),
+        )
+        Box(modifier = Modifier.fillMaxSize().background(backgroundGradient)) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()

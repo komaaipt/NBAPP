@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.Color
 /** Colors the Material scheme has no role for. Read them through [NbaTheme.colors]. */
 @Immutable
 data class ExtendedColors(
+    val backgroundGradientEnd: Color,
     /** De-emphasized content, e.g. the losing team on a scoreboard. */
     val muted: Color,
     val mutedContainer: Color,
@@ -17,6 +18,7 @@ data class ExtendedColors(
 )
 
 internal val LightExtendedColors = ExtendedColors(
+    backgroundGradientEnd = LightBackgroundEnd,
     muted = LightMuted,
     mutedContainer = LightMutedContainer,
     winContainer = LightWinContainer,
@@ -26,6 +28,7 @@ internal val LightExtendedColors = ExtendedColors(
 )
 
 internal val DarkExtendedColors = ExtendedColors(
+    backgroundGradientEnd = DarkBackgroundEnd,
     muted = DarkMuted,
     mutedContainer = DarkMutedContainer,
     winContainer = DarkWinContainer,
