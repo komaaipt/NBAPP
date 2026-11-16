@@ -4,9 +4,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
@@ -19,6 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -44,7 +50,9 @@ import com.nb.app.core.ui.toApiError
 import com.nb.app.core.ui.toMessage
 import com.nb.app.domain.model.Player
 import com.nb.app.domain.model.Team
+import com.nb.app.presentation.navigation.LocalBottomBarScrollState
 import com.nb.app.presentation.navigation.SelectedTeam
+import com.nb.app.presentation.navigation.bottomBarHeight
 import com.nb.app.presentation.navigation.toSelectedTeam
 import kotlinx.coroutines.flow.flowOf
 import nbapp.shared.generated.resources.Res
@@ -91,8 +99,8 @@ fun PlayersContent(
     onPlayerClick: (Player) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.fillMaxSize().imePadding()) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().imePadding()) {
             ScreenHeader(title = stringResource(Res.string.players_title))
             val refresh = players.loadState.refresh
             when {
@@ -107,15 +115,36 @@ fun PlayersContent(
                 else -> EmptyState(message = Res.string.players_empty, formatArgs = listOf(searchedQuery))
             }
         }
-        ExpandingSearchFab(
+        SearchFabAboveBottomBar(
             expanded = isSearchExpanded,
             query = query,
-            placeholder = stringResource(Res.string.search_players_hint),
             onExpandedChange = onSearchExpandedChange,
             onQueryChange = onQueryChange,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(ScreenPadding),
+            modifier = Modifier.align(Alignment.BottomCenter),
         )
     }
+}
+
+@Composable
+private fun SearchFabAboveBottomBar(
+    expanded: Boolean,
+    query: String,
+    onExpandedChange: (Boolean) -> Unit,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val visibleBarHeight = with(LocalDensity.current) { LocalBottomBarScrollState.current.visibleHeightPx.toDp() }
+    val bottomInsets = WindowInsets.ime
+        .union(WindowInsets.navigationBars)
+        .union(WindowInsets(bottom = visibleBarHeight))
+    ExpandingSearchFab(
+        expanded = expanded,
+        query = query,
+        placeholder = stringResource(Res.string.search_players_hint),
+        onExpandedChange = onExpandedChange,
+        onQueryChange = onQueryChange,
+        modifier = modifier.windowInsetsPadding(bottomInsets).padding(ScreenPadding),
+    )
 }
 
 @Composable
@@ -124,7 +153,7 @@ private fun PlayerList(
     onPlayerClick: (Player) -> Unit,
 ) {
     LazyColumn(
-        contentPadding = PaddingValues(start = ScreenPadding, end = ScreenPadding, bottom = SearchFabClearance),
+        contentPadding = PaddingValues(start = ScreenPadding, end = ScreenPadding, bottom = SearchFabClearance + bottomBarHeight()),
         verticalArrangement = Arrangement.spacedBy(CardSpacing),
     ) {
         items(count = players.itemCount, key = players.itemKey { it.id }) { index ->

@@ -35,6 +35,7 @@ import com.nb.app.core.ui.theme.NbaTheme
 import com.nb.app.core.ui.toMessage
 import com.nb.app.domain.model.Team
 import com.nb.app.presentation.navigation.SelectedTeam
+import com.nb.app.presentation.navigation.bottomBarHeight
 import com.nb.app.presentation.navigation.toSelectedTeam
 import nbapp.shared.generated.resources.Res
 import nbapp.shared.generated.resources.home_title
@@ -120,7 +121,7 @@ private fun TeamList(
     onTeamClick: (Team) -> Unit,
 ) {
     LazyColumn(
-        contentPadding = PaddingValues(start = ScreenPadding, end = ScreenPadding, bottom = ScreenPadding),
+        contentPadding = PaddingValues(start = ScreenPadding, end = ScreenPadding, bottom = ScreenPadding + bottomBarHeight()),
         verticalArrangement = Arrangement.spacedBy(CardSpacing),
     ) {
         items(items = teams, key = { it.id }) { team ->
