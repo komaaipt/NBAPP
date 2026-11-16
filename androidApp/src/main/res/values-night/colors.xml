@@ -1,0 +1,4 @@
+<resources>
+    <!-- Top color of the dark background gradient (DarkBackground in the shared theme). -->
+    <color name="splash_background">#FF0E1526</color>
+</resources>

@@ -1,4 +1,4 @@
 <resources>
-    <!-- Same as SplashBackground in the shared theme. -->
-    <color name="splash_background">#FF2F6BFF</color>
+    <!-- Top color of the app background gradient (LightBackground in the shared theme). -->
+    <color name="splash_background">#FFEAF1FF</color>
 </resources>

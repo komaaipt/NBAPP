@@ -5,7 +5,7 @@ and **Compose Multiplatform** (Android and iOS share all the code, including the
 
 | Screen | What it does |
 |---|---|
-| **Splash** | A basketball, drawn in code, is thrown in an arc, lands in the middle of the screen with a small bounce, and the app name, NBAPP, fades in below it. |
+| **Splash** | The NBA logo animates in over the app background gradient: the badge first, then the wordmark slides in. |
 | **Home** tab | Lists the current NBA teams (name, city, conference). The **Name** button opens a dialog to sort by Name, City or Conference; the choice updates the button title and the list. |
 | **Team games** bottom sheet | Opened by tapping a team. Receives the team id and lists its games (home team, home score, visitor team, visitor score), newest first, with **endless scroll**. Closes with the Back button, by dragging down or with **< Home**. |
 | **Players** tab | Searches players by name (first name, last name, team). Tapping a player reuses the team games bottom sheet for the player's team. |
@@ -75,7 +75,7 @@ domain/
   model/       Team, Game, Player, Page
   repository/  repository interfaces
 presentation/
-  splash/      animated splash (pure animation model + Canvas drawing)
+  splash/      animated splash (pure animation model + Compose drawing)
   navigation/  tabs, selected team, scoped ViewModel stores
   home/        Home tab, sort dialog
   teamgames/   team games bottom sheet
@@ -108,10 +108,12 @@ Tests use kotlin-test, kotlinx-coroutines-test and Ktor `MockEngine`.
   held at the app level, so Home and Players open the same view. Its ViewModel lives in its own
   `ViewModelStore`: it survives rotation and is cleared when the sheet closes, so ViewModels don't
   pile up for every team opened.
-- **Splash drawn in code.** `SplashAnimation.kt` turns the elapsed time into the ball's flight,
-  bounce and the name's fade, and is unit tested; `SplashScreen.kt` only draws it on a Canvas.
-  The Android 12+ system splash is a plain background of the same color, so it hands over to the
-  animation without a jump.
+- **Splash.** `SplashAnimation.kt` turns the elapsed time into the logo's entrance and is unit
+  tested; `SplashScreen.kt` only draws it. The logo is split into the badge and the wordmark so the
+  white wordmark can be tinted with the text color and stay readable on the light gradient. The
+  Android 12+ system splash uses the gradient's top color (and the dark one in dark mode), so it
+  hands over to the animation without a jump. The NBA logo is a trademark of the NBA, used here
+  only for this demo.
 - **Visual identity.** Light blue background (`#EAF1FF`), white cards and one action color, a modern
   blue (`#2F6BFF`); the orange of the basketball is the only brand accent. Lists use cards instead
   of tables so names never wrap on a phone: teams show an abbreviation badge, games are scoreboards
